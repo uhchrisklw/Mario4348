@@ -3,149 +3,57 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour {
-    Rigidbody2D m_Rigidbody;
-    private Animator myAnimation;
-    float m_Speed;
+    public float maxSpeed = 3;
+    public float speed = 5f;
+    public float jumpPower = 150f;
+    public bool grounded;
+    private Rigidbody2D m_RigidBody;
 
-    SpriteRenderer m_SpriteRenderer;
-    
-    private bool grounded;
-    private float fallSpeed;
-    public Transform groundCheck;
-    public float groundCheckRadius;
-    public LayerMask whatIsGround;
+    private Animator m_Animator;
 
     void Start()
     {
-        //Fetch the Rigidbody component you attach from your GameObject
-        m_Rigidbody = GetComponent<Rigidbody2D>();
-
-        //Fetch Animation component 
-        myAnimation = GetComponent<Animator>();
-
-        m_SpriteRenderer = GetComponent<SpriteRenderer>();
-
-        //Set the speed of the GameObject
-        m_Speed = 1.0f;
-        fallSpeed = 1.0f;
-    }
-
-    private void FixedUpdate()
-    {
-        grounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, whatIsGround);
-        if (grounded == true)
-        {
-            myAnimation.SetBool("Grounded", true);
-        }
-        else if (grounded == false)
-        {
-            myAnimation.SetBool("Grounded", false);
-        }
+        m_RigidBody = GetComponent<Rigidbody2D>();
+        m_Animator = GetComponent<Animator>();
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.RightArrow))
+        m_Animator.SetBool("Grounded", grounded);
+        m_Animator.SetFloat("Speed", Mathf.Abs(Input.GetAxis("Horizontal")));
+
+        if(Input.GetAxis("Horizontal") < -0.1f)
         {
-            if (m_SpriteRenderer.flipX == true)
-            {
-                m_SpriteRenderer.flipX = false;
-            }
-            //Move the Rigidbody to the right constantly at speed you define (the red arrow axis in Scene view)
-            myAnimation.SetFloat("Speed", m_Speed);
-            m_Rigidbody.velocity = transform.right * m_Speed;
-        }
-        else if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            if (m_SpriteRenderer.flipX == false)
-            {
-                m_SpriteRenderer.flipX = true;
-            }
-            //Move the Rigidbody to the left constantly at the speed you define (the red arrow axis in Scene view)
-            myAnimation.SetFloat("Speed", m_Speed);
-            m_Rigidbody.velocity = -transform.right * m_Speed;
+            transform.localScale = new Vector3(-1, 1, 1);
         }
 
-        if (Input.GetKeyUp(KeyCode.RightArrow))
+        if (Input.GetAxis("Horizontal") > 0.1f)
         {
-            myAnimation.SetFloat("Speed", 0);
+            transform.localScale = new Vector3(1, 1, 1);
         }
-        else if (Input.GetKeyUp(KeyCode.LeftArrow))
+
+        if (Input.GetButtonDown("Jump") && grounded)
         {
-            myAnimation.SetFloat("Speed", 0);
+            m_RigidBody.AddForce(Vector2.up * jumpPower);
         }
     }
 
+    void FixedUpdate()
+    {
+        float h = Input.GetAxis("Horizontal");
 
+        // move player
+        m_RigidBody.AddForce((Vector2.right * speed) * h);
 
-    //   private Rigidbody2D myRigidBody;
-    //   [SerializeField]
-    //   private float moveSpeed;
-    //   private float moveVelocity;
-    //   [SerializeField]
-    //   private float jumpHeight;
-    //   [SerializeField]
-    //   private bool grounded;
-    //   private float fallSpeed;
-    //   public Transform groundCheck;
-    //   public float groundCheckRadius;
-    //   public LayerMask whatIsGround;
-    //   private Animator myAnimation;
+        // limit speed of player
+        if (m_RigidBody.velocity.x > maxSpeed)
+        {
+            m_RigidBody.velocity = new Vector2(maxSpeed, m_RigidBody.velocity.y);
+        }
 
-
-    //// Use this for initialization
-    //void Start () {
-    //       myRigidBody = GetComponent<Rigidbody2D>();
-    //       myAnimation = GetComponent<Animator>();
-    //}
-
-    //   // physics of jumping
-    //   private void FixedUpdate() {
-    //       grounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, whatIsGround);
-    //       if (grounded == true)
-    //       {
-    //           myAnimation.SetBool("Grounded", true);
-    //       }
-    //       else if (grounded == false)
-    //       {
-    //           myAnimation.SetBool("Grounded", false);
-    //       }
-    //   }
-
-    //   // Update is called once per frame
-    //   void Update () {
-    //       var vertical = Input.GetAxis("Vertical");
-    //       myAnimation.SetFloat("Speed", vertical);
-
-    //       var horizontal = Input.GetAxis("Horizontal");
-    //       myAnimation.SetFloat("Speed", horizontal);
-    //       moveVelocity = 0f;
-
-    //       if (Input.GetKey(KeyCode.RightArrow))
-    //       {
-    //           moveVelocity = moveSpeed;
-    //       }
-
-    //       if (Input.GetKey(KeyCode.LeftArrow))
-    //       {
-    //           moveVelocity = -moveSpeed;
-    //           //{
-    //           //    myRigidBody.velocity = new Vector2(moveVelocity, myRigidBody.velocity.y);
-    //           //}
-    //           //if (Input.GetKey(KeyCode.Space))
-    //           //{
-    //           //    myRigidBody.velocity = new Vector2(myRigidBody.velocity.x, jumpHeight);
-    //           //}
-    //           //myAnimation.SetFloat("Speed", Mathf.Abs(myRigidBody.velocity.x));
-    //           //if (myRigidBody.velocity.x > 0)
-    //           //{
-    //           //    transform.localScale = new Vector3(1f, 1f, 1f);
-    //           //}
-    //           //else if (myRigidBody.velocity.x < 0)
-    //           //{
-    //           //    transform.localScale = new Vector3(-1f, -1f, -1f);
-    //           //}
-    //       }
-
-    //   }
+        if (m_RigidBody.velocity.x < -maxSpeed)
+        {
+            m_RigidBody.velocity = new Vector2(-maxSpeed, m_RigidBody.velocity.y);
+        }
+    }
 }
